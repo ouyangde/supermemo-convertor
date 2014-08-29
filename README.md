@@ -6,6 +6,7 @@ Convert mp3+lyc files to supermemoUX files
 supermemo-convertor.hta is actually a .html file, except it only works on IE.
 
 The recommended workflow is:
+
 1. Download aboboo, which is a freeware.
 2. Download supermemoUX, which is also for free.
 3. Use aboboo to split a MP3 file, one sentense per file.
