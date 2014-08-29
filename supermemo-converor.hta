@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>SupermemoUX Course Convertor</title>
+  </head>
+  <body>
+	<p>This tool simplely convert a bundle of mp3+lyc files to SupermemoUX course files.</p>
+    Select a file: <input type="file" id="file" /> (Acturaly I only need a folder, so any file under that folder is OK.)<br/>
+	Input initial index: <input type="text" id="index" value="1"/>
+    <br />
+    <input type="button" value="Start" onclick="go()"/>
+  </body>
+  <script type="text/javascript">
+  if (!String.prototype.encodeHTML) {
+  String.prototype.encodeHTML = function () {
+    return this.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&apos;');
+  };
+}
+	var fso = new ActiveXObject("Scripting.FileSystemObject");
+    function go() {
+      var filename = document.getElementById("file").value;
+	  var index = document.getElementById("index").value;
+	  
+      if(!fso.FileExists(filename)) {
+        alert('please select file');
+        return;
+      }
+	  
+	  var dirname = fso.GetParentFolderName(filename);
+	  var coursename = fso.GetBaseName(dirname);
+	  var folder = fso.GetFolder(dirname);
+
+	  mkdir(dirname + "\\" + coursename);
+	  mkdir(dirname + "\\" + coursename + "\\media");
+	  
+	  var fc = new Enumerator(folder.files);
+	  var indexcontent = "";
+	  for(; !fc.atEnd(); fc.moveNext())
+	  {
+		var name = fc.item().Name;
+		if (name.match(/\.mp3$/i)) {
+			var oldname = dirname + "\\" + name;
+			var lrcname = dirname + "\\" + name.replace(/mp3$/i, "lrc");
+			var paddingIndex = pad(index, "000000");
+			var newname = dirname + "\\" + coursename + "\\media\\" + paddingIndex + "q.mp3";
+			var xmlfile = dirname + "\\" + coursename + "\\" + paddingIndex + ".xml";
+			
+			var xmlcontent = "<q>" + fileGetContent(lrcname).encodeHTML() + "</q>";
+			indexcontent += "<li>" + index + "</li>";
+			
+			
+			copy(oldname, newname);
+			filePutContent(xmlfile, xmlcontent);
+			index++;
+		}
+	  }
+	  indexcontent = "<xml>" + indexcontent + "</xml>";
+	  filePutContent(dirname + "\\" + coursename + "\\" + "course.xml", indexcontent);
+	  alert('done');
+    }
+	
+	function fileGetContent(filename)
+	{
+		if (!fso.FileExists(filename)) {
+			return "";
+		}
+		var f = fso.OpenTextFile(filename, 1);
+		var r = f.ReadAll();
+		f.Close();
+		return r;
+	}
+	
+	function copy(old, newname)
+	{
+		fso.CopyFile(old, newname);
+	}
+	
+	function filePutContent(filename, content)
+	{
+		var f = fso.createTextFile(filename);
+		f.Write(content);
+		f.Close();
+	}
+	
+	function mkdir(dirname)
+	{
+		try {
+			fso.CreateFolder(dirname);
+		}
+		catch(e) {}
+	}
+	
+	function pad(num, padding)
+	{
+		str = "" + num;
+		return padding.substr(0, padding.length - str.length) + str;
+	}
+	
+  </script>
+</html>
