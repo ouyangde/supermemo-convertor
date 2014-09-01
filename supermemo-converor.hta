@@ -35,8 +35,8 @@
 	  var coursename = fso.GetBaseName(dirname);
 	  var folder = fso.GetFolder(dirname);
 
-	  mkdir(dirname + "\\" + coursename);
-	  mkdir(dirname + "\\" + coursename + "\\media");
+	  mkdir(dirname + "\\override");
+	  mkdir(dirname + "\\override\\media");
 	  
 	  var fc = new Enumerator(folder.files);
 	  var indexcontent = "";
@@ -47,8 +47,8 @@
 			var oldname = dirname + "\\" + name;
 			var lrcname = dirname + "\\" + name.replace(/mp3$/i, "lrc");
 			var paddingIndex = pad(index, "000000");
-			var newname = dirname + "\\" + coursename + "\\media\\" + paddingIndex + "q.mp3";
-			var xmlfile = dirname + "\\" + coursename + "\\" + paddingIndex + ".xml";
+			var newname = dirname + "\\override\\media\\" + paddingIndex + "q.mp3";
+			var xmlfile = dirname + "\\override\\" + paddingIndex + ".xml";
 			
 			var xmlcontent = "<q>" + fileGetContent(lrcname).encodeHTML() + "</q>";
 			indexcontent += "<li>" + index + "</li>";
@@ -59,8 +59,8 @@
 			index++;
 		}
 	  }
-	  indexcontent = "<xml>" + indexcontent + "</xml>";
-	  filePutContent(dirname + "\\" + coursename + "\\" + "course.xml", indexcontent);
+	  indexcontent = "<xml><name>" + coursename + "</name>" + indexcontent + "</xml>";
+	  filePutContent(dirname + "\\override\\" + "course.xml", indexcontent);
 	  alert('done');
     }
 	
@@ -69,10 +69,13 @@
 		if (!fso.FileExists(filename)) {
 			return "";
 		}
-		var f = fso.OpenTextFile(filename, 1);
-		var r = f.ReadAll();
-		f.Close();
-		return r;
+		var stream = new ActiveXObject("ADODB.Stream");
+		stream.CharSet = "utf-8";
+		stream.Open();
+		stream.LoadFromFile(filename);
+		var data = stream.ReadText();
+		stream.Close();
+		return data;
 	}
 	
 	function copy(old, newname)
@@ -82,9 +85,12 @@
 	
 	function filePutContent(filename, content)
 	{
-		var f = fso.createTextFile(filename);
-		f.Write(content);
-		f.Close();
+		var stream = new ActiveXObject("ADODB.Stream");
+		stream.CharSet = "utf-8";
+		stream.Open();
+		stream.WriteText(content);
+		stream.SaveToFile(filename, 2);
+		stream.Close();
 	}
 	
 	function mkdir(dirname)
