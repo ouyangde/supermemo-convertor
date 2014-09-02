@@ -11,7 +11,7 @@
     <br />
     <input type="button" value="Start" onclick="go()"/>
   </body>
-  <script type="text/javascript">
+<script type="text/javascript">
   if (!String.prototype.encodeHTML) {
   String.prototype.encodeHTML = function () {
     return this.replace(/&/g, '&amp;')
@@ -22,14 +22,14 @@
   };
 }
 	var fso = new ActiveXObject("Scripting.FileSystemObject");
-    function go() {
-      var filename = document.getElementById("file").value;
+  function go() {
+    var filename = document.getElementById("file").value;
 	  var index = document.getElementById("index").value;
 	  
-      if(!fso.FileExists(filename)) {
-        alert('please select file');
-        return;
-      }
+    if(!fso.FileExists(filename)) {
+      alert('please select file');
+      return;
+    }
 	  
 	  var dirname = fso.GetParentFolderName(filename);
 	  var coursename = fso.GetBaseName(dirname);
@@ -39,30 +39,31 @@
 	  mkdir(dirname + "\\override\\media");
 	  
 	  var fc = new Enumerator(folder.files);
-	  var indexcontent = "";
+	  var indexes = [];
+	  var show_item = tmpl("item_tmpl");
 	  for(; !fc.atEnd(); fc.moveNext())
 	  {
-		var name = fc.item().Name;
-		if (name.match(/\.mp3$/i)) {
-			var oldname = dirname + "\\" + name;
-			var lrcname = dirname + "\\" + name.replace(/mp3$/i, "lrc");
-			var paddingIndex = pad(index, "000000");
-			var newname = dirname + "\\override\\media\\" + paddingIndex + "q.mp3";
-			var xmlfile = dirname + "\\override\\" + paddingIndex + ".xml";
+			var name = fc.item().Name;
+			if (name.match(/\.mp3$/i)) {
+				var oldname = dirname + "\\" + name;
+				var lrcname = dirname + "\\" + name.replace(/mp3$/i, "lrc");
+				var paddingIndex = pad(index, "00000");
+				var newname = dirname + "\\override\\media\\" + paddingIndex + "q.mp3";
+				var xmlfile = dirname + "\\override\\item" + paddingIndex + ".xml";
 			
-			var xmlcontent = "<q>" + fileGetContent(lrcname).encodeHTML() + "</q>";
-			indexcontent += "<li>" + index + "</li>";
+				var xmlcontent = show_item({'answer':fileGetContent(lrcname)});
+				indexes.push({index:index, 'name':index});
 			
-			
-			copy(oldname, newname);
-			filePutContent(xmlfile, xmlcontent);
-			index++;
-		}
+				copy(oldname, newname);
+				filePutContent(xmlfile, xmlcontent);
+				index++;
+			}
 	  }
-	  indexcontent = "<xml><name>" + coursename + "</name>" + indexcontent + "</xml>";
-	  filePutContent(dirname + "\\override\\" + "course.xml", indexcontent);
+	  indexcontent = tmpl('course_tmpl', {title:coursename, guid:guid(), 'indexes':indexes});
+	  filePutContent(dirname + "\\override\\course.xml", indexcontent);
+	  alert(indexcontent.substr(0,5));
 	  alert('done');
-    }
+  }
 	
 	function fileGetContent(filename)
 	{
@@ -106,6 +107,84 @@
 		str = "" + num;
 		return padding.substr(0, padding.length - str.length) + str;
 	}
+	function guid()
+	{
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+		});
+	}
 	
-  </script>
+</script>
+<script type="text/javascript">
+// Simple JavaScript Templating
+// John Resig - http://ejohn.org/ - MIT Licensed
+// http://ejohn.org/blog/javascript-micro-templating/
+(function(){
+  var cache = {};
+ 
+  this.tmpl = function tmpl(str, data){
+    // Figure out if we're getting a template, or if we need to
+    // load the template - and be sure to cache the result.
+    var fn = !/\W/.test(str) ?
+      cache[str] = cache[str] ||
+        tmpl(document.getElementById(str).innerHTML) :
+     
+      // Generate a reusable function that will serve as a template
+      // generator (and which will be cached).
+      new Function("obj",
+        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+       
+        // Introduce the data as local variables using with(){}
+        "with(obj){p.push('" +
+       
+        // Convert the template into pure JavaScript
+        str
+          .replace(/[\r\t\n]/g, "")
+          .split("<%").join("\t")
+          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+          .replace(/\t=(.*?)%>/g, "',$1,'")
+          .split("\t").join("');")
+          .split("%>").join("p.push('")
+          .split("\r").join("\\'")
+      + "');}return p.join('');");
+   
+    // Provide some basic currying to the user
+    return data ? fn( data ) : fn;
+  };
+})();
+</script>
+  
+  
+<script type="text/html" id="course_tmpl"><?xml version="1.0" encoding="utf-8"?>
+<course xmlns="http://www.supermemo.net/2006/smux">
+<guid><%=guid%></guid>
+<title><%=title%></title>
+<created>2014-08-28</created>
+<modified>2014-08-28</modified>
+<language-of-instruction>en</language-of-instruction>
+<language-taught>en</language-taught>
+<default-items-per-day>10</default-items-per-day>
+<default-template-id>1</default-template-id>
+<type>regular</type>
+<sorting>default</sorting>
+<version>1.0.12</version>
+<% for (var i = 0; i < indexes.length; i++) { %>
+<element id="<%=indexes[i].index%>" type="exercise" name="<%=indexes[i].name%>" />
+<% } %>
+</course>
+</script>
+  	
+  	
+<script type="text/html" id="item_tmpl"><?xml version="1.0" encoding="utf-8"?>
+<item xmlns="http://www.supermemo.net/2006/smux">
+  <question></question>
+  <answer><%=answer%></answer>
+  <modified>2014-08-28</modified>
+  <template-id>1</template-id>
+  <question-audio>true</question-audio>
+</item>
+</script>
+
+
 </html>
